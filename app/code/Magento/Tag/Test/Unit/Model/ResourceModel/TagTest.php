@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Tag\Test\Unit\Model\ResourceModel;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\App\State as AppState;
 use Magento\Framework\DataObject;
 use Magento\Framework\DB\Adapter\AdapterInterface;
 use Magento\Framework\DB\Select;
@@ -45,6 +46,11 @@ class TagTest extends TestCase
      */
     private $storeManager;
 
+    /**
+     * @var AppState&MockObject
+     */
+    private $appState;
+
     protected function setUp(): void
     {
         $this->context = $this->createMock(Context::class);
@@ -55,11 +61,12 @@ class TagTest extends TestCase
         $this->context->method('getResources')->willReturn($this->resource);
         $this->stringUtils = new StringUtils();
         $this->storeManager = $this->createMock(StoreManagerInterface::class);
+        $this->appState = $this->createMock(AppState::class);
     }
 
     public function testLoadByNameEmptyNameSetsEmptyData(): void
     {
-        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager);
+        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager, $this->appState);
 
         $model = new DataObject(['name' => 'wat']);
         $tagResource->loadByName($model, '');
@@ -68,7 +75,7 @@ class TagTest extends TestCase
 
     public function testLoadByNameQueriesConnectionAndPopulatesModel(): void
     {
-        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager);
+        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager, $this->appState);
         $select = $this->createMock(Select::class);
         $select->method('from')->willReturnSelf();
         $select->method('where')->willReturnSelf();
@@ -87,7 +94,7 @@ class TagTest extends TestCase
 
     public function testLoadByNameHandlesMissingRow(): void
     {
-        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager);
+        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager, $this->appState);
         $select = $this->createMock(Select::class);
         $select->method('from')->willReturnSelf();
         $select->method('where')->willReturnSelf();
@@ -101,7 +108,7 @@ class TagTest extends TestCase
 
     public function testDecrementProductsWithEmptyTagIdsReturnsZero(): void
     {
-        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager);
+        $tagResource = new Tag($this->context, $this->stringUtils, $this->storeManager, $this->appState);
         $this->assertSame(0, $tagResource->decrementProducts([]));
     }
 }

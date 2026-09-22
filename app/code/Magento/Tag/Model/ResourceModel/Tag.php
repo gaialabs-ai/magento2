@@ -8,6 +8,7 @@ declare(strict_types=1);
 namespace Magento\Tag\Model\ResourceModel;
 
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\App\State as AppState;
 use Magento\Framework\DataObject;
 use Magento\Framework\DB\Select;
 use Magento\Framework\Model\AbstractModel;
@@ -32,19 +33,27 @@ class Tag extends AbstractDb
     private $storeManager;
 
     /**
+     * @var AppState
+     */
+    private $appState;
+
+    /**
      * @param Context $context
      * @param StringUtils $stringUtils
      * @param StoreManagerInterface $storeManager
+     * @param AppState $appState
      * @param string|null $connectionName
      */
     public function __construct(
         Context $context,
         StringUtils $stringUtils,
         StoreManagerInterface $storeManager,
+        AppState $appState,
         ?string $connectionName = null
     ) {
         $this->stringUtils = $stringUtils;
         $this->storeManager = $storeManager;
+        $this->appState = $appState;
         parent::__construct($context, $connectionName);
     }
 
@@ -100,7 +109,7 @@ class Tag extends AbstractDb
      */
     protected function _beforeSave(AbstractModel $object)
     {
-        if (!$object->getId() && (int) $object->getData('status') === (int) $object->getData('approved_status_value', \Magento\Tag\Model\Tag::STATUS_APPROVED)) {
+        if (!$object->getId() && (int) $object->getData('status') === \Magento\Tag\Model\Tag::STATUS_APPROVED) {
             $searchTag = new DataObject();
             $this->loadByName($searchTag, (string) $object->getData('name'));
             if ($searchTag->getData($this->getIdFieldName())
@@ -122,14 +131,16 @@ class Tag extends AbstractDb
      */
     protected function _afterSave(AbstractModel $object)
     {
-        $store = (int) $object->getData('store');
-        if (!$store || $this->storeManager->getStore($store)->getId() != 0) {
-            // per legacy: only persist base popularity when saving in the admin store context
-            if (!$store) {
-                return parent::_afterSave($object);
-            }
+        // Legacy Mage_Tag_Model_Resource_Tag::_afterSave persisted base popularity only when
+        // the current request was running in the admin area (Mage::app()->getStore()->isAdmin()).
+        // We reproduce that by comparing the current app area to Backend / adminhtml. Callers
+        // may still set the object's `store` field to target a specific store view — that value
+        // becomes the store_id we upsert against tag_properties.
+        if (!$this->isAdminAreaRequest()) {
+            return parent::_afterSave($object);
         }
 
+        $store = (int) $object->getData('store');
         $tagId = $object->isObjectNew() ? (int) $object->getData('tag_id') : (int) $object->getId();
 
         $writeAdapter = $this->getConnection();
@@ -140,6 +151,20 @@ class Tag extends AbstractDb
         ]);
 
         return parent::_afterSave($object);
+    }
+
+    /**
+     * True when the current request is being processed in the admin area.
+     *
+     * @return bool
+     */
+    private function isAdminAreaRequest(): bool
+    {
+        try {
+            return $this->appState->getAreaCode() === \Magento\Framework\App\Area::AREA_ADMINHTML;
+        } catch (\Magento\Framework\Exception\LocalizedException $exception) {
+            return false;
+        }
     }
 
     /**

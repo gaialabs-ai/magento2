@@ -13,7 +13,6 @@ use Magento\Framework\App\Action\HttpPostActionInterface;
 use Magento\Framework\App\Action\HttpGetActionInterface;
 use Magento\Framework\App\ActionInterface;
 use Magento\Framework\App\RequestInterface;
-use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Framework\Controller\ResultInterface;
@@ -48,11 +47,6 @@ class Save implements ActionInterface, HttpPostActionInterface, HttpGetActionInt
      * @var RequestInterface
      */
     private $request;
-
-    /**
-     * @var ResponseInterface
-     */
-    private $response;
 
     /**
      * @var CustomerSession
@@ -116,7 +110,6 @@ class Save implements ActionInterface, HttpPostActionInterface, HttpGetActionInt
 
     /**
      * @param RequestInterface $request
-     * @param ResponseInterface $response
      * @param CustomerSession $customerSession
      * @param TagSession $tagSession
      * @param TagHelper $tagHelper
@@ -132,7 +125,6 @@ class Save implements ActionInterface, HttpPostActionInterface, HttpGetActionInt
      */
     public function __construct(
         RequestInterface $request,
-        ResponseInterface $response,
         CustomerSession $customerSession,
         TagSession $tagSession,
         TagHelper $tagHelper,
@@ -147,7 +139,6 @@ class Save implements ActionInterface, HttpPostActionInterface, HttpGetActionInt
         LoggerInterface $logger
     ) {
         $this->request = $request;
-        $this->response = $response;
         $this->customerSession = $customerSession;
         $this->tagSession = $tagSession;
         $this->tagHelper = $tagHelper;
@@ -183,9 +174,11 @@ class Save implements ActionInterface, HttpPostActionInterface, HttpGetActionInt
                     'product' => $productId,
                 ]);
             }
-            $this->customerSession->setBeforeAuthUrl(
-                $this->urlBuilder->getUrl('customer/account/login')
-            );
+            $referer = (string) $this->request->getServer('HTTP_REFERER');
+            if ($referer !== '') {
+                // Post-login: bring the user back to the product page they submitted the tag from.
+                $this->customerSession->setBeforeAuthUrl($referer);
+            }
             $redirect = $this->redirectFactory->create();
             $redirect->setPath('customer/account/login');
             return $redirect;
