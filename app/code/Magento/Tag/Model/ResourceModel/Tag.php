@@ -132,15 +132,15 @@ class Tag extends AbstractDb
     protected function _afterSave(AbstractModel $object)
     {
         // Legacy Mage_Tag_Model_Resource_Tag::_afterSave persisted base popularity only when
-        // the current request was running in the admin area (Mage::app()->getStore()->isAdmin()).
-        // We reproduce that by comparing the current app area to Backend / adminhtml. Callers
-        // may still set the object's `store` field to target a specific store view — that value
-        // becomes the store_id we upsert against tag_properties.
-        if (!$this->isAdminAreaRequest()) {
+        // the object had a `store` set AND the current request was running in the admin area
+        // (`if (!$object->getStore() || !Mage::app()->getStore()->isAdmin()) { return … }`).
+        // Both guards are required: skipping the store guard would upsert a tag_properties row
+        // keyed on store_id = 0 when admin code saves a tag without first assigning a store.
+        $store = (int) $object->getData('store');
+        if ($store === 0 || !$this->isAdminAreaRequest()) {
             return parent::_afterSave($object);
         }
 
-        $store = (int) $object->getData('store');
         $tagId = $object->isObjectNew() ? (int) $object->getData('tag_id') : (int) $object->getId();
 
         $writeAdapter = $this->getConnection();

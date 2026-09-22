@@ -81,11 +81,12 @@ class TagTest extends TestCase
         $relationResource->method('formatDate')->willReturn('2023-11-14 22:13:20');
         // First relation created inside saveRelation()
         $freshRelation = $this->getMockBuilder(Relation::class)
-            ->onlyMethods(['save', 'getResource', 'loadByTagCustomer'])
+            ->onlyMethods(['save', 'getResource', 'loadByTagCustomer', 'getProductIds'])
             ->disableOriginalConstructor()
             ->getMock();
         $freshRelation->method('getResource')->willReturn($relationResource);
         $freshRelation->method('loadByTagCustomer')->willReturnSelf();
+        $freshRelation->method('getProductIds')->willReturn($productIds);
 
         // Second (linked) relation created via _getLinkBetweenTagCustomerProduct
         $linkedRelation = $this->getMockBuilder(Relation::class)
