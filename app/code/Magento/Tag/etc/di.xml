@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2024 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Magento\Tag\Api\Data\TagInterface" type="Magento\Tag\Model\Data\Tag"/>
+    <preference for="Magento\Tag\Api\Data\TagRelationInterface" type="Magento\Tag\Model\Data\TagRelation"/>
+    <preference for="Magento\Tag\Api\Data\TagSearchResultsInterface" type="Magento\Tag\Model\Data\TagSearchResults"/>
+    <preference for="Magento\Tag\Api\Data\TagsAddedResultInterface" type="Magento\Tag\Model\Data\TagsAddedResult"/>
+    <preference for="Magento\Tag\Api\TagRepositoryInterface" type="Magento\Tag\Model\TagRepository"/>
+    <preference for="Magento\Tag\Api\TagManagementInterface" type="Magento\Tag\Model\TagManagement"/>
+    <type name="Magento\Framework\Session\SessionManager">
+        <arguments>
+            <argument name="sessionConfig" xsi:type="object">Magento\Framework\Session\Config</argument>
+        </arguments>
+    </type>
+</config>
