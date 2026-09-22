@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2024 Adobe
+ * All Rights Reserved.
+ */
+-->
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
+    <route url="/V1/tags/search" method="GET">
+        <service class="Magento\Tag\Api\TagRepositoryInterface" method="getList"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/tags/:tagId" method="GET">
+        <service class="Magento\Tag\Api\TagRepositoryInterface" method="getById"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/tags/:tagId" method="DELETE">
+        <service class="Magento\Tag\Api\TagRepositoryInterface" method="deleteById"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/tags" method="POST">
+        <service class="Magento\Tag\Api\TagRepositoryInterface" method="save"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/tags/:tagId" method="PUT">
+        <service class="Magento\Tag\Api\TagRepositoryInterface" method="save"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/products/:productId/tags" method="GET">
+        <service class="Magento\Tag\Api\TagManagementInterface" method="getTagsForProduct"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/products/:productId/tags" method="POST">
+        <service class="Magento\Tag\Api\TagManagementInterface" method="addTagsToProduct"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+    <route url="/V1/products/:productId/tags/:tagId" method="DELETE">
+        <service class="Magento\Tag\Api\TagManagementInterface" method="removeTagFromProduct"/>
+        <resources>
+            <resource ref="Magento_Tag::tags"/>
+        </resources>
+    </route>
+</routes>

@@ -12,9 +12,18 @@
     <preference for="Magento\Tag\Api\Data\TagsAddedResultInterface" type="Magento\Tag\Model\Data\TagsAddedResult"/>
     <preference for="Magento\Tag\Api\TagRepositoryInterface" type="Magento\Tag\Model\TagRepository"/>
     <preference for="Magento\Tag\Api\TagManagementInterface" type="Magento\Tag\Model\TagManagement"/>
-    <type name="Magento\Framework\Session\SessionManager">
+    <type name="Magento\Tag\Model\TagRepository">
         <arguments>
-            <argument name="sessionConfig" xsi:type="object">Magento\Framework\Session\Config</argument>
+            <argument name="collectionProcessor" xsi:type="object">Magento\Tag\Model\Api\SearchCriteria\TagCollectionProcessor</argument>
         </arguments>
     </type>
+    <virtualType name="Magento\Tag\Model\Api\SearchCriteria\TagCollectionProcessor" type="Magento\Framework\Api\SearchCriteria\CollectionProcessor">
+        <arguments>
+            <argument name="processors" xsi:type="array">
+                <item name="filters" xsi:type="object">Magento\Framework\Api\SearchCriteria\CollectionProcessor\FilterProcessor</item>
+                <item name="sorting" xsi:type="object">Magento\Framework\Api\SearchCriteria\CollectionProcessor\SortingProcessor</item>
+                <item name="pagination" xsi:type="object">Magento\Framework\Api\SearchCriteria\CollectionProcessor\PaginationProcessor</item>
+            </argument>
+        </arguments>
+    </virtualType>
 </config>

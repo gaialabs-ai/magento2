@@ -4,7 +4,7 @@
  * Copyright 2024 Adobe
  * All Rights Reserved.
  *
- * Root ACL node for the Tag module. Admin-facing children are added in Milestone 4.
+ * Root ACL nodes for the Tag module. Admin-facing children (manage tags, review pending) are added in Milestone 4.
  */
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Acl/etc/acl.xsd">
@@ -12,7 +12,9 @@
         <resources>
             <resource id="Magento_Backend::admin">
                 <resource id="Magento_Catalog::catalog">
-                    <resource id="Magento_Tag::tag" title="Tags" sortOrder="90"/>
+                    <resource id="Magento_Tag::tag" title="Tags" sortOrder="90">
+                        <resource id="Magento_Tag::tags" title="Manage Tags" sortOrder="10"/>
+                    </resource>
                 </resource>
             </resource>
         </resources>
