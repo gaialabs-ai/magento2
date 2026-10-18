@@ -160,12 +160,13 @@ class RelationTest extends TestCase
         $this->resourceModel->loadByTagCustomer($model);
 
         $this->assertCount(1, $this->joinCalls);
-        $this->assertSame(['tag', 'tag.tag_id = tag_relation.tag_id'], $this->joinCalls[0]);
+        $this->assertSame('tag', $this->joinCalls[0][0]);
+        $this->assertSame('tag.tag_id = tag_relation.tag_id', $this->joinCalls[0][1]);
 
         // Only the base tag_id/customer_id conditions - no product_id or store_id narrowing.
         $this->assertCount(2, $this->whereCalls);
-        $this->assertSame(['tag_relation.tag_id = :tag_id'], $this->whereCalls[0]);
-        $this->assertSame(['customer_id = :customer_id'], $this->whereCalls[1]);
+        $this->assertSame('tag_relation.tag_id = :tag_id', $this->whereCalls[0][0]);
+        $this->assertSame('customer_id = :customer_id', $this->whereCalls[1][0]);
 
         $this->assertSame($row, $model->getData());
     }
@@ -191,7 +192,7 @@ class RelationTest extends TestCase
         $this->resourceModel->loadByTagCustomer($model);
 
         $this->assertCount(3, $this->whereCalls);
-        $this->assertSame(['tag_relation.product_id = :product_id'], $this->whereCalls[2]);
+        $this->assertSame('tag_relation.product_id = :product_id', $this->whereCalls[2][0]);
     }
 
     public function testLoadByTagCustomerDoesNotAddProductIdConditionWhenProductIdIsFalsy(): void
@@ -220,7 +221,7 @@ class RelationTest extends TestCase
         $this->resourceModel->loadByTagCustomer($model);
 
         $this->assertCount(3, $this->whereCalls);
-        $this->assertSame(['tag_relation.store_id = :sore_id'], $this->whereCalls[2]);
+        $this->assertSame('tag_relation.store_id = :sore_id', $this->whereCalls[2][0]);
     }
 
     public function testLoadByTagCustomerAddsBothProductAndStoreConditionsWhenBothPresent(): void
@@ -253,7 +254,7 @@ class RelationTest extends TestCase
 
         $this->assertSame([1, 2, 3], $result);
         $this->assertCount(1, $this->whereCalls);
-        $this->assertSame(['tag_relation.tag_id=:tag_id'], $this->whereCalls[0]);
+        $this->assertSame('tag_relation.tag_id=:tag_id', $this->whereCalls[0][0]);
         $this->assertSame([], $this->joinCalls);
     }
 
@@ -268,7 +269,7 @@ class RelationTest extends TestCase
         $this->resourceModel->getProductIds($model);
 
         $this->assertCount(2, $this->whereCalls);
-        $this->assertSame(['tag_relation.customer_id= :customer_id'], $this->whereCalls[1]);
+        $this->assertSame('tag_relation.customer_id= :customer_id', $this->whereCalls[1][0]);
     }
 
     public function testGetProductIdsDoesNotAddCustomerIdConditionWhenCustomerIdIsExplicitlyNull(): void
@@ -295,7 +296,7 @@ class RelationTest extends TestCase
         $this->resourceModel->getProductIds($model);
 
         $this->assertCount(2, $this->whereCalls);
-        $this->assertSame(['tag_relation.store_id = :store_id'], $this->whereCalls[1]);
+        $this->assertSame('tag_relation.store_id = :store_id', $this->whereCalls[1][0]);
     }
 
     public function testGetProductIdsJoinsTagTableAndFiltersByStatusWhenStatusFilterIsNotNull(): void
@@ -310,9 +311,10 @@ class RelationTest extends TestCase
 
         $this->assertSame([4, 5], $result);
         $this->assertCount(1, $this->joinCalls);
-        $this->assertSame(['tag', 'tag.tag_id = tag_relation.tag_id'], $this->joinCalls[0]);
+        $this->assertSame('tag', $this->joinCalls[0][0]);
+        $this->assertSame('tag.tag_id = tag_relation.tag_id', $this->joinCalls[0][1]);
         $this->assertCount(2, $this->whereCalls);
-        $this->assertSame(['tag.status = :t_status'], $this->whereCalls[1]);
+        $this->assertSame('tag.status = :t_status', $this->whereCalls[1][0]);
     }
 
     public function testGetProductIdsCombinesAllFiltersAndBindsWhenEveryConditionIsPresent(): void
