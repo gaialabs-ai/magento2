@@ -13,6 +13,7 @@ prefix and removed in fixture teardown.
 import os
 import re
 import uuid
+from contextlib import contextmanager
 
 import pymysql
 import pymysql.cursors
@@ -44,6 +45,16 @@ def db_connect():
         autocommit=True,
         cursorclass=pymysql.cursors.DictCursor,
     )
+
+
+@contextmanager
+def db_cursor():
+    conn = db_connect()
+    try:
+        with conn.cursor() as cur:
+            yield cur
+    finally:
+        conn.close()
 
 
 def extract_form_key(html: str) -> str:
@@ -108,14 +119,10 @@ def _create_customer():
 
 
 def _delete_customer_data(customer_id):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM tag_relation WHERE customer_id=%s", (customer_id,))
-            cur.execute("DELETE FROM tag WHERE first_customer_id=%s", (customer_id,))
-            cur.execute("DELETE FROM customer_entity WHERE entity_id=%s", (customer_id,))
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("DELETE FROM tag_relation WHERE customer_id=%s", (customer_id,))
+        cur.execute("DELETE FROM tag WHERE first_customer_id=%s", (customer_id,))
+        cur.execute("DELETE FROM customer_entity WHERE entity_id=%s", (customer_id,))
 
 
 @pytest.fixture
@@ -222,98 +229,62 @@ def second_product(admin_token):
 # through a real HTTP POST to tag/index/save and verify the resulting DB state.
 
 def fetch_tag(tag_id):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM tag WHERE tag_id=%s", (tag_id,))
-            return cur.fetchone()
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM tag WHERE tag_id=%s", (tag_id,))
+        return cur.fetchone()
 
 
 def fetch_tag_by_name(name):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM tag WHERE name=%s", (name,))
-            return cur.fetchone()
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM tag WHERE name=%s", (name,))
+        return cur.fetchone()
 
 
 def fetch_relations_for_tag(tag_id):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("SELECT * FROM tag_relation WHERE tag_id=%s ORDER BY tag_relation_id", (tag_id,))
-            return cur.fetchall()
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("SELECT * FROM tag_relation WHERE tag_id=%s ORDER BY tag_relation_id", (tag_id,))
+        return cur.fetchall()
 
 
 def fetch_relation(tag_id, customer_id, product_id):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT * FROM tag_relation WHERE tag_id=%s AND customer_id=%s AND product_id=%s",
-                (tag_id, customer_id, product_id),
-            )
-            return cur.fetchone()
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute(
+            "SELECT * FROM tag_relation WHERE tag_id=%s AND customer_id=%s AND product_id=%s",
+            (tag_id, customer_id, product_id),
+        )
+        return cur.fetchone()
 
 
 def insert_tag_direct(name, status, first_customer_id, first_store_id=1):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO tag (name, status, first_customer_id, first_store_id) VALUES (%s, %s, %s, %s)",
-                (name, status, first_customer_id, first_store_id),
-            )
-            return cur.lastrowid
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute(
+            "INSERT INTO tag (name, status, first_customer_id, first_store_id) VALUES (%s, %s, %s, %s)",
+            (name, status, first_customer_id, first_store_id),
+        )
+        return cur.lastrowid
 
 
 def insert_relation_direct(tag_id, customer_id, product_id, store_id=1, active=1):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "INSERT INTO tag_relation (tag_id, customer_id, product_id, store_id, active, created_at) "
-                "VALUES (%s, %s, %s, %s, %s, NOW())",
-                (tag_id, customer_id, product_id, store_id, active),
-            )
-            return cur.lastrowid
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute(
+            "INSERT INTO tag_relation (tag_id, customer_id, product_id, store_id, active, created_at) "
+            "VALUES (%s, %s, %s, %s, %s, NOW())",
+            (tag_id, customer_id, product_id, store_id, active),
+        )
+        return cur.lastrowid
 
 
 def set_tag_status(tag_id, status):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE tag SET status=%s WHERE tag_id=%s", (status, tag_id))
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("UPDATE tag SET status=%s WHERE tag_id=%s", (status, tag_id))
 
 
 def set_relation_active(relation_id, active):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("UPDATE tag_relation SET active=%s WHERE tag_relation_id=%s", (active, relation_id))
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("UPDATE tag_relation SET active=%s WHERE tag_relation_id=%s", (active, relation_id))
 
 
 def delete_tag_and_relations(tag_id):
-    conn = db_connect()
-    try:
-        with conn.cursor() as cur:
-            cur.execute("DELETE FROM tag_relation WHERE tag_id=%s", (tag_id,))
-            cur.execute("DELETE FROM tag WHERE tag_id=%s", (tag_id,))
-    finally:
-        conn.close()
+    with db_cursor() as cur:
+        cur.execute("DELETE FROM tag_relation WHERE tag_id=%s", (tag_id,))
+        cur.execute("DELETE FROM tag WHERE tag_id=%s", (tag_id,))
