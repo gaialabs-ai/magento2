@@ -14,16 +14,6 @@ use Magento\Tag\Model\Tag\Relation;
 class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection
 {
     /**
-     * @var bool
-     */
-    protected $_isStoreFilter = false;
-
-    /**
-     * @var array
-     */
-    protected $_joinFlags = [];
-
-    /**
      * @var array
      */
     public $_map = ['fields' => ['tag_id' => 'main_table.tag_id']];
