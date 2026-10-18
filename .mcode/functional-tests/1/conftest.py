@@ -160,9 +160,7 @@ def logged_in(new_customer):
     return session, form_key, new_customer
 
 
-@pytest.fixture
-def new_product(admin_token):
-    """A fresh simple product created via the app's own Admin REST API."""
+def _create_product(admin_token):
     suffix = unique_suffix()
     sku = f"{NAMESPACE}-prod-{suffix}"
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -181,8 +179,15 @@ def new_product(admin_token):
     r = requests.post(f"{BASE_URL}/rest/V1/products", json=payload, headers=headers, timeout=30)
     assert r.status_code == 200, r.text
     product_id = r.json()["id"]
-    yield {"id": product_id, "sku": sku}
-    requests.delete(f"{BASE_URL}/rest/V1/products/{sku}", headers=headers, timeout=30)
+    return {"id": product_id, "sku": sku}, headers
+
+
+@pytest.fixture
+def new_product(admin_token):
+    """A fresh simple product created via the app's own Admin REST API."""
+    product, headers = _create_product(admin_token)
+    yield product
+    requests.delete(f"{BASE_URL}/rest/V1/products/{product['sku']}", headers=headers, timeout=30)
 
 
 @pytest.fixture
@@ -201,26 +206,9 @@ def seeded_tags():
 @pytest.fixture
 def second_product(admin_token):
     """A second, independent product."""
-    suffix = unique_suffix()
-    sku = f"{NAMESPACE}-prod-{suffix}"
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    payload = {
-        "product": {
-            "sku": sku,
-            "name": f"FT Run Product {suffix}",
-            "price": 10.0,
-            "status": 1,
-            "visibility": 4,
-            "type_id": "simple",
-            "attribute_set_id": 4,
-            "extension_attributes": {"stock_item": {"qty": 100, "is_in_stock": True}},
-        }
-    }
-    r = requests.post(f"{BASE_URL}/rest/V1/products", json=payload, headers=headers, timeout=30)
-    assert r.status_code == 200, r.text
-    product_id = r.json()["id"]
-    yield {"id": product_id, "sku": sku}
-    requests.delete(f"{BASE_URL}/rest/V1/products/{sku}", headers=headers, timeout=30)
+    product, headers = _create_product(admin_token)
+    yield product
+    requests.delete(f"{BASE_URL}/rest/V1/products/{product['sku']}", headers=headers, timeout=30)
 
 
 # --- Direct DB helpers -------------------------------------------------------------
