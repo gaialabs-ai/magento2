@@ -83,7 +83,7 @@ class Collection extends \Magento\Framework\Model\ResourceModel\Db\Collection\Ab
             if ($limit !== null) {
                 $this->getSelect()->limit($limit);
             }
-            $this->setFlag('popularity');
+            $this->setFlag('popularity', true);
         }
         return $this;
     }
