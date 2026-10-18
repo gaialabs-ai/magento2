@@ -96,7 +96,6 @@ class TestAddTagAuthAndValidation:
     def test_add_tag_missing_tag_name_is_noop(self, logged_in, new_product):
         session, form_key, customer = logged_in
 
-        before = c.fetch_relations_for_tag(new_product["id"])  # sentinel, not used for assertion directly
         resp = c.post_add_tag(session, form_key, "", new_product["id"])
 
         assert resp.status_code == 302
