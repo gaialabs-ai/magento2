@@ -74,14 +74,26 @@ class TestAddTagHappyPath:
 
 class TestAddTagAuthAndValidation:
     def test_add_tag_unauthenticated_request_is_rejected(self, new_product):
+        """Save::dispatch() now guards with customerSession->authenticate(), redirecting an
+        unauthenticated submission straight to the login page (and stashing beforeAuthUrl to
+        resume there) instead of silently dropping it. The form key must come from an
+        uncached, personalized page (customer/account/) rather than the full-page-cached
+        homepage ("/") - the homepage's embedded form_key is baked in at cache-generation
+        time and is identical across unrelated anonymous sessions, which would make the
+        request fail the framework's CSRF check before it even reaches Save::dispatch(),
+        and would make this test pass for the wrong reason regardless of the auth guard."""
         anon_session = __import__("requests").Session()
-        r = anon_session.get(c.BASE_URL + "/", timeout=c.TIMEOUT)
-        form_key = c.extract_form_key(r.text)
+        form_key = c.current_form_key(anon_session)
         tag_name = f"{c.NAMESPACE}_unauth_{c.unique_suffix()}"
 
         resp = c.post_add_tag(anon_session, form_key, tag_name, new_product["id"])
 
         assert resp.status_code == 302
+        location = resp.headers.get("Location", "")
+        assert "customer/account/login" in location, (
+            f"an unauthenticated submission must redirect to the login page (to resume after "
+            f"sign-in), not silently no-op; got Location={location!r}"
+        )
         assert c.fetch_tag_by_name(tag_name) is None, "unauthenticated request must not create a tag"
 
     def test_add_tag_invalid_form_key_is_rejected(self, logged_in, new_product):
