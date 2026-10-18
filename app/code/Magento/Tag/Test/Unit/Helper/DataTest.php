@@ -12,6 +12,7 @@ use Magento\Framework\App\Helper\Context;
 use Magento\Framework\TestFramework\Unit\Helper\ObjectManager as ObjectManagerHelper;
 use Magento\Tag\Helper\Data as HelperData;
 use Magento\Tag\Model\Tag;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
@@ -49,9 +50,7 @@ class DataTest extends TestCase
         );
     }
 
-    /**
-     * @dataProvider extractTagsDataProvider
-     */
+    #[DataProvider('extractTagsDataProvider')]
     public function testExtractTags(string $input, array $expected): void
     {
         $this->assertSame($expected, $this->helper->extractTags($input));
@@ -100,9 +99,7 @@ class DataTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider cleanTagsDataProvider
-     */
+    #[DataProvider('cleanTagsDataProvider')]
     public function testCleanTags(array $input, array $expected): void
     {
         $this->assertSame($expected, $this->helper->cleanTags($input));
@@ -159,9 +156,7 @@ class DataTest extends TestCase
         ];
     }
 
-    /**
-     * @dataProvider extractThenCleanTagsDataProvider
-     */
+    #[DataProvider('extractThenCleanTagsDataProvider')]
     public function testExtractTagsThenCleanTags(string $input, array $expected): void
     {
         $this->assertSame($expected, $this->helper->cleanTags($this->helper->extractTags($input)));

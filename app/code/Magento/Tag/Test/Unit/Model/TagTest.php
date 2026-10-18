@@ -242,7 +242,7 @@ class TagTest extends TestCase
      */
     public function testSaveRelationApprovedNotLinkedReturnsSuccessAndSavesRelation(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_APPROVED);
 
@@ -261,7 +261,7 @@ class TagTest extends TestCase
      */
     public function testSaveRelationApprovedLinkedWithNoExistingCustomerRelationSavesAndReturnsExist(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_APPROVED);
 
@@ -280,13 +280,13 @@ class TagTest extends TestCase
      */
     public function testSaveRelationApprovedLinkedWithInactiveExistingRelationReactivatesAndReturnsExist(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_APPROVED);
 
         $relation->method('getProductIds')->willReturn([55]);
         $relation->method('getId')->willReturn(321);
-        $relation->method('getActive')->willReturn(0);
+        $relation->setActive(0);
         $relation->expects($this->once())->method('save');
 
         $result = $tag->saveRelation(55, 7, 1);
@@ -301,13 +301,13 @@ class TagTest extends TestCase
      */
     public function testSaveRelationApprovedLinkedWithActiveExistingRelationDoesNotSaveAndReturnsExist(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_APPROVED);
 
         $relation->method('getProductIds')->willReturn([55]);
         $relation->method('getId')->willReturn(321);
-        $relation->method('getActive')->willReturn(1);
+        $relation->setActive(1);
         $relation->expects($this->never())->method('save');
 
         $result = $tag->saveRelation(55, 7, 1);
@@ -321,7 +321,7 @@ class TagTest extends TestCase
      */
     public function testSaveRelationPendingWithNoExistingRelationSavesAndReturnsNew(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_PENDING);
 
@@ -339,12 +339,12 @@ class TagTest extends TestCase
      */
     public function testSaveRelationPendingWithInactiveExistingRelationReactivatesAndReturnsNew(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_PENDING);
 
         $relation->method('getId')->willReturn(55);
-        $relation->method('getActive')->willReturn(0);
+        $relation->setActive(0);
         $relation->expects($this->once())->method('save');
 
         $result = $tag->saveRelation(55, 7, 1);
@@ -359,12 +359,12 @@ class TagTest extends TestCase
      */
     public function testSaveRelationPendingWithActiveExistingRelationDoesNotSaveButStillReturnsNew(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getId', 'getActive', 'save']);
+        [$tag, $relation] = $this->createTagWithRelation(['getId', 'save']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_PENDING);
 
         $relation->method('getId')->willReturn(55);
-        $relation->method('getActive')->willReturn(1);
+        $relation->setActive(1);
         $relation->expects($this->never())->method('save');
 
         $result = $tag->saveRelation(55, 7, 1);
