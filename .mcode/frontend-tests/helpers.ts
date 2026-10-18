@@ -33,6 +33,13 @@ export async function loginAsCustomer(page: Page, email: string, password: strin
   await page.waitForURL(/\/customer\/account\/?(\?.*)?$/, { timeout: 15000 });
 }
 
+/** Waits for a full-page POST + redirect-back to land on the fixture PDP
+ * (the tag form has no AJAX/SPA submission — every submit round-trips
+ * through a full navigation back to the same product page). */
+export async function waitForProductPage(page: Page) {
+  await page.waitForURL(new RegExp(FIXTURE_PRODUCT_PATH.replace(".", "\\.") + "$"));
+}
+
 interface DbConfig {
   host: string;
   user: string;

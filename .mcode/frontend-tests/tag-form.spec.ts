@@ -4,6 +4,7 @@ import {
   FIXTURE_PRODUCT_PATH,
   loginAsCustomer,
   countTagsNamed,
+  waitForProductPage,
 } from "./helpers";
 
 /**
@@ -55,7 +56,7 @@ test.describe("Magento_Tag PDP form — logged-in customer", () => {
     await form.getByRole("button", { name: "Add Tags" }).click();
 
     // Full page POST + redirect back to the same PDP (no AJAX/SPA state).
-    await page.waitForURL(new RegExp(FIXTURE_PRODUCT_PATH.replace(".", "\\.") + "$"));
+    await waitForProductPage(page);
 
     // Exactly 3 tokens parsed: wordA, the quoted two-word phrase (kept
     // intact, not split on its internal space), and wordB.
@@ -91,7 +92,7 @@ test.describe("Magento_Tag PDP form — logged-in customer", () => {
 
     await form.locator("#productTagName").fill(repeatTag);
     await form.getByRole("button", { name: "Add Tags" }).click();
-    await page.waitForURL(new RegExp(FIXTURE_PRODUCT_PATH.replace(".", "\\.") + "$"));
+    await waitForProductPage(page);
     await expect(
       page.getByText("1 tag(s) have been accepted for moderation.")
     ).toBeVisible();
@@ -99,7 +100,7 @@ test.describe("Magento_Tag PDP form — logged-in customer", () => {
     // Submit the exact same tag name again while it's still pending.
     await form.locator("#productTagName").fill(repeatTag);
     await form.getByRole("button", { name: "Add Tags" }).click();
-    await page.waitForURL(new RegExp(FIXTURE_PRODUCT_PATH.replace(".", "\\.") + "$"));
+    await waitForProductPage(page);
     await expect(
       page.getByText("1 tag(s) have been accepted for moderation.")
     ).toBeVisible();
