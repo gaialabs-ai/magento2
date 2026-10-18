@@ -12,6 +12,7 @@ use Magento\Customer\Model\Session;
 use Magento\Framework\App\Action\Action;
 use Magento\Framework\App\Action\Context;
 use Magento\Framework\App\Action\HttpPostActionInterface;
+use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Controller\Result\Redirect;
 use Magento\Framework\Controller\ResultFactory;
 use Magento\Framework\Data\Form\FormKey\Validator;
@@ -99,6 +100,29 @@ class Save extends Action implements HttpPostActionInterface
     }
 
     /**
+     * Redirect unauthenticated requests to login, resuming here once the customer signs in.
+     *
+     * Modern equivalent of the customerSession->authenticate($this) guard at the top of
+     * Mage_Tag_IndexController::saveAction() - same idiom as
+     * \Magento\ProductAlert\Controller\Add::dispatch(). authenticate() stores the current URL as
+     * beforeAuthUrl and redirects to the login page; execute() is skipped entirely (via the
+     * no-dispatch action flag) so it never runs for an unauthenticated request.
+     *
+     * @param RequestInterface $request
+     * @return \Magento\Framework\App\ResponseInterface
+     */
+    public function dispatch(RequestInterface $request)
+    {
+        if (!$this->customerSession->authenticate()) {
+            $this->_actionFlag->set('', 'no-dispatch', true);
+            if (!$this->customerSession->getBeforeAuthUrl()) {
+                $this->customerSession->setBeforeAuthUrl($this->_redirect->getRefererUrl());
+            }
+        }
+        return parent::dispatch($request);
+    }
+
+    /**
      * Save tag and relation between tag, customer, product and store
      *
      * @return Redirect
@@ -108,12 +132,11 @@ class Save extends Action implements HttpPostActionInterface
         /** @var Redirect $resultRedirect */
         $resultRedirect = $this->resultFactory->create(ResultFactory::TYPE_REDIRECT);
 
-        // Judgment call: the legacy controller relied on customerSession->authenticate($this), which
-        // redirects unauthenticated requests straight to the login page. There is no controller-plugin
-        // auth wiring to replicate that here, so both the form-key and login checks simply bounce the
-        // request back to the referrer without processing anything - no tag data is ever read or saved
-        // for an invalid/unauthenticated request.
-        if (!$this->formKeyValidator->validate($this->getRequest()) || !$this->customerSession->isLoggedIn()) {
+        // Authentication is enforced in dispatch() above (customerSession->authenticate()), matching
+        // Mage_Tag_IndexController::saveAction()'s customerSession->authenticate($this) guard - by the
+        // time execute() runs, the customer is guaranteed to be logged in. Only the form-key (CSRF)
+        // check remains here.
+        if (!$this->formKeyValidator->validate($this->getRequest())) {
             $resultRedirect->setUrl($this->_redirect->getRefererUrl());
             return $resultRedirect;
         }

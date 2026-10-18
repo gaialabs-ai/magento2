@@ -16,12 +16,11 @@ import {
  *    #addTagForm, the tokenizer splits on spaces but keeps single-quoted
  *    multi-word phrases intact, and a server-rendered success message with
  *    the correct token count is shown after the redirect-back.
- *  - A guest submitting the same form gets a silent no-op (full page
- *    round-trip back to the same PDP, no message, no tag persisted) — this
- *    is intentional per Magento\Tag\Controller\Index\Save::execute()'s own
- *    code comment (no auth-redirect plugin wired up this milestone), NOT a
- *    bug and NOT a login redirect. Do not assert a redirect to
- *    /customer/account/login/ here.
+ *  - A guest submitting the same form is redirected to the storefront login
+ *    page (customer/account/login), matching legacy's
+ *    customerSession->authenticate($this) guard in
+ *    Mage_Tag_IndexController::saveAction() — nothing is persisted and no
+ *    success message is shown for the unauthenticated request.
  *  - There is intentionally no on-page reflection of submitted tags (no tag
  *    chips/list, no "My Tags" page) — that read-side UI is out of scope for
  *    this milestone (deferred to Milestone 3), so these tests don't look
@@ -112,7 +111,7 @@ test.describe("Magento_Tag PDP form — logged-in customer", () => {
 });
 
 test.describe("Magento_Tag PDP form — guest (not logged in)", () => {
-  test("silently no-ops: no success message, no login redirect, nothing persisted", async ({
+  test("redirects to login and persists nothing", async ({
     page,
   }) => {
     // Fresh, unauthenticated context (Playwright's default `page` fixture
@@ -126,23 +125,11 @@ test.describe("Magento_Tag PDP form — guest (not logged in)", () => {
     await form.locator("#productTagName").fill(guestTag);
     await form.getByRole("button", { name: "Add Tags" }).click();
 
-    // Controller bounces the unauthenticated POST straight back to the
-    // referrer (the same PDP) without reading or saving the posted data.
-    await page.waitForURL(new RegExp(FIXTURE_PRODUCT_PATH.replace(".", "\\.") + "$"));
-
-    // Must NOT behave like the legacy origin app, which redirects guests to
-    // the login page — assert we're still on the PDP, not on a login route.
-    expect(page.url()).not.toMatch(/customer\/account\/login/);
-
-    // No success/error banner of any kind — silent no-op per
-    // Magento\Tag\Controller\Index\Save::execute()'s documented behavior.
-    await expect(page.locator(".message-success")).toHaveCount(0);
-    await expect(
-      page.getByText(/tag\(s\) have been accepted for moderation/)
-    ).toHaveCount(0);
-
-    // The form is back in its pristine, empty state — nothing to resubmit.
-    await expect(page.locator("#productTagName")).toHaveValue("");
+    // Matches legacy's customerSession->authenticate($this) guard: the
+    // unauthenticated POST is bounced to the storefront login page instead
+    // of being processed.
+    await page.waitForURL(/\/customer\/account\/login/);
+    expect(page.url()).toMatch(/customer\/account\/login/);
 
     // Nothing was written server-side for the guest's tag name.
     expect(countTagsNamed(guestTag)).toBe(0);
