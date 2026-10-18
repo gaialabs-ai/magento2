@@ -76,22 +76,43 @@ class TagTest extends TestCase
     }
 
     /**
-     * Build a fully wired Tag + Relation pair ready for saveRelation() tests:
-     * relationFactory->create() always returns the same relation mock, mirroring the
-     * production code's behaviour of re-fetching "the" relation via the factory multiple
-     * times within a single saveRelation() call while actually operating on one row.
+     * Build a fully wired Tag + Relation pair ready for saveRelation() tests.
+     *
+     * By default, relationFactory->create() always returns the same relation mock for every
+     * call within a single saveRelation() invocation, mirroring the common case where the model
+     * "re-fetched" via the factory is still conceptually the same row being prepared for save.
+     *
+     * saveRelation() unconditionally calls setActive(STATUS_ACTIVE) on its own freshly-created
+     * relation model (the *first* factory call) before ever inspecting the row returned by
+     * _getLinkBetweenTagCustomerProduct() (the *second* factory call). When a test needs that
+     * second, "existing" row to carry a genuinely *inactive* state so it can assert the
+     * reactivation branch, collapsing both calls onto one shared mock would let that initial
+     * setActive(STATUS_ACTIVE) silently clobber the inactive flag before the reactivation check
+     * ever runs. Passing $existingRelationOnlyMethods makes the second-and-later factory calls
+     * return a second, independent mock instead, matching production's real behaviour of the
+     * "new" model and the "loaded from DB" model being two distinct Relation instances.
      *
      * @param string[] $relationOnlyMethods
-     * @return array{0: MockObject|Tag, 1: MockObject|Relation}
+     * @param string[]|null $existingRelationOnlyMethods
+     * @return array{0: MockObject|Tag, 1: MockObject|Relation, 2: MockObject|Relation}
      */
-    private function createTagWithRelation(array $relationOnlyMethods): array
+    private function createTagWithRelation(array $relationOnlyMethods, ?array $existingRelationOnlyMethods = null): array
     {
         $tag = $this->createTagMock();
         $relation = $this->createRelationMock(array_unique(array_merge($relationOnlyMethods, ['loadByTagCustomer'])));
         $relation->method('loadByTagCustomer')->willReturnSelf();
 
+        $existingRelation = $relation;
         $relationFactory = $this->createMock(RelationFactory::class);
-        $relationFactory->method('create')->willReturn($relation);
+        if ($existingRelationOnlyMethods !== null) {
+            $existingRelation = $this->createRelationMock(
+                array_unique(array_merge($existingRelationOnlyMethods, ['loadByTagCustomer']))
+            );
+            $existingRelation->method('loadByTagCustomer')->willReturnSelf();
+            $relationFactory->method('create')->willReturnOnConsecutiveCalls($relation, $existingRelation);
+        } else {
+            $relationFactory->method('create')->willReturn($relation);
+        }
 
         $dateTime = $this->createMock(DateTime::class);
         $dateTime->method('gmtDate')->willReturn('2026-10-18 00:00:00');
@@ -100,7 +121,7 @@ class TagTest extends TestCase
         $this->setPrivateProperty($tag, 'dateTime', $dateTime);
         $this->setPrivateProperty($tag, 'storeManager', $this->createMock(StoreManagerInterface::class));
 
-        return [$tag, $relation];
+        return [$tag, $relation, $existingRelation];
     }
 
     public function testGetApprovedStatusReturnsConstant(): void
@@ -280,14 +301,14 @@ class TagTest extends TestCase
      */
     public function testSaveRelationApprovedLinkedWithInactiveExistingRelationReactivatesAndReturnsExist(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getProductIds', 'getId', 'save']);
+        [$tag, $relation, $existingRelation] = $this->createTagWithRelation(['getProductIds', 'save'], ['getId']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_APPROVED);
 
         $relation->method('getProductIds')->willReturn([55]);
-        $relation->method('getId')->willReturn(321);
-        $relation->setActive(0);
         $relation->expects($this->once())->method('save');
+        $existingRelation->method('getId')->willReturn(321);
+        $existingRelation->setActive(0);
 
         $result = $tag->saveRelation(55, 7, 1);
 
@@ -339,13 +360,13 @@ class TagTest extends TestCase
      */
     public function testSaveRelationPendingWithInactiveExistingRelationReactivatesAndReturnsNew(): void
     {
-        [$tag, $relation] = $this->createTagWithRelation(['getId', 'save']);
+        [$tag, $relation, $existingRelation] = $this->createTagWithRelation(['save'], ['getId']);
         $tag->setId(10);
         $tag->setStatus(Tag::STATUS_PENDING);
 
-        $relation->method('getId')->willReturn(55);
-        $relation->setActive(0);
         $relation->expects($this->once())->method('save');
+        $existingRelation->method('getId')->willReturn(55);
+        $existingRelation->setActive(0);
 
         $result = $tag->saveRelation(55, 7, 1);
 
