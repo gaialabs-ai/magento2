@@ -1,0 +1,29 @@
+<?php
+/**
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ */
+
+/** @var \Magento\Tag\Block\Product\AddTag $block */
+/** @var \Magento\Framework\Escaper $escaper */
+?>
+<?php if ($block->getProductId()): ?>
+<div class="box-collateral box-tags">
+    <form id="addTagForm" action="<?= $escaper->escapeUrl($block->getFormAction()) ?>" method="post">
+        <?= $block->getBlockHtml('formkey') ?>
+        <div class="field">
+            <label for="productTagName" class="label"><span><?= $escaper->escapeHtml(__('Add Your Tags')) ?></span></label>
+            <div class="control">
+                <input type="text" name="productTagName" id="productTagName" class="input-text" />
+            </div>
+        </div>
+        <div class="actions-toolbar">
+            <div class="primary">
+                <button type="submit" class="action submit primary">
+                    <span><?= $escaper->escapeHtml(__('Add Tags')) ?></span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+<?php endif ?>
