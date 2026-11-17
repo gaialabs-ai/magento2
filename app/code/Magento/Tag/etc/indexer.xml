@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright 2026 Adobe
+ * All Rights Reserved.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Indexer/etc/indexer.xsd">
+    <indexer id="tag_summary" view_id="tag_summary" class="Magento\Tag\Model\Indexer\Summary">
+        <title translate="true">Tag Aggregation Data</title>
+        <description translate="true">Rebuild Tag aggregation data</description>
+    </indexer>
+</config>
