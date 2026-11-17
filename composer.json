@@ -310,6 +310,7 @@
         "magento/module-swagger-webapi-async": "*",
         "magento/module-swatches": "*",
         "magento/module-swatches-layered-navigation": "*",
+        "magento/module-tag": "*",
         "magento/module-tax": "*",
         "magento/module-tax-import-export": "*",
         "magento/module-theme": "*",
